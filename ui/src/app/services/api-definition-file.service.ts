@@ -124,6 +124,46 @@ export class ApiDefinitionFileService {
         return spec;
     }
 
+    public async loadSoarepo(file?: Blob | FileSystemFileHandle): Promise<any> {
+        // We cannot just use `file instanceof FileSystemFileHandle` because it will throw an
+        // exception if that type is not defined (in browsers that do not support the feature)
+        if (this.fileSystemAccessApiAvailable && file instanceof FileSystemFileHandle) {
+            this.fileHandle = file;
+            file = await this.fileHandle.getFile();
+        }
+
+        if (!file) {
+            if (!this.fileSystemAccessApiAvailable) {
+                throw new Error('When file system access API is unavailable, a file must be specified.');
+            }
+
+            let fileHandles: FileSystemFileHandle[];
+            try {
+                fileHandles = await this.windowRef.window.showOpenFilePicker({
+                    multiple: false,
+                    types: ApiDefinitionFileService.filePickerAcceptTypes
+                });
+            } catch (e) {
+                throw new Error("No file selected.");
+            }
+
+            this.fileHandle = fileHandles[0];
+            file = await this.fileHandle.getFile();
+        }
+
+        const contents = await this.readFile(file as File);
+
+        let spec: any;
+        try {
+            spec = parseYaml(contents);
+        } catch (e) {
+            console.error("Error parsing file: ", e);
+            throw new Error("Error parsing OpenAPI file. Perhaps it is not valid YAML or JSON?");
+        }
+
+        return spec;
+    }
+
     private getContents(spec: any, format: "json" | "yaml"): string {
         let contents: string = spec;
         if (typeof spec === "object") {

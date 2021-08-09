@@ -34,6 +34,12 @@ import {ConfigureValidationComponent} from "./editor/configure-validation.dialog
 import {ApiDefinitionFileService} from './services/api-definition-file.service';
 import {ServiceWorkerModule} from '@angular/service-worker';
 import {environment} from '../environments/environment';
+import { Routes, RouterModule } from '@angular/router';
+
+const routes: Routes = [
+    {path:'apicurio', component:EditorComponent},
+    {path:'', redirectTo:'/',pathMatch:'full'}
+  ];
 
 @NgModule({
     imports: [
@@ -41,6 +47,7 @@ import {environment} from '../environments/environment';
         FormsModule,
         HttpClientModule,
         ApicurioEditorModule,
+        RouterModule.forRoot(routes),
         ApicurioCommonComponentsModule,
         ModalModule.forRoot(),
         BsDropdownModule.forRoot(),

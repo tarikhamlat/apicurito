@@ -22,5 +22,6 @@
 
 
 export const environment = {
-    production: false
+    production: false,
+    oasCreationUrl:'https://openapi-generator-ute-amt.ite-intra-ams.af-klm.com',
 };

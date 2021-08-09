@@ -20,7 +20,12 @@ import {NewApiTemplates} from "./empty-state.data";
 import {StorageService} from "../services/storage.service";
 import {ApiDefinitionFileService} from "../services/api-definition-file.service";
 import {ApiDefinition} from "apicurio-design-studio";
-
+import { HttpClient } from "@angular/common/http";
+import { ActivatedRoute } from '@angular/router';
+import { safeLoadAll, loadAll, load, dump } from "js-yaml";
+import { map } from 'rxjs/operators';
+import { OasCreationService } from "../services/oas-creation.service";
+ 
 @Component({
     moduleId: module.id,
     selector: "empty-state",
@@ -36,8 +41,45 @@ export class EmptyStateComponent {
     dragging: boolean;
     error: string = null;
     templates: NewApiTemplates = new NewApiTemplates();
+    file2:any
+    url: any;
+    id:any
 
-    constructor(private storage: StorageService, private apiDefinitionFile: ApiDefinitionFileService) {}
+    constructor(private route: ActivatedRoute,private storage: StorageService, private apiDefinitionFile: ApiDefinitionFileService, private http:HttpClient, private oasCreationService: OasCreationService) {}
+
+    ngOnInit() {
+
+        this.route.queryParams.subscribe(params => {
+            console.log(params); 
+            this.url = params.url;
+            this.id = params.id;
+            console.log( this.url); 
+            this.openOpenApi(this.url)
+            this.getData(this.id)
+          }
+          );
+
+
+    
+      }
+
+
+      // Get OAS file from SOARepo
+    openOpenApi(url) {
+        this.http.get(url,{responseType: 'blob'}).subscribe(data =>{
+            this.loadSoaRepoFile(data);
+        },error => console.log('Get error', error))
+    }
+
+    // Get Data from resource store
+    getData(id:any){
+        this.oasCreationService.getData(id).subscribe(data=>{
+
+            this.loadSoaRepoFile(data);
+        },err=> console.log('**********************',err))
+
+    }
+
 
     public hasRecoverableApi(): boolean {
         return this.storage.exists();
@@ -88,6 +130,18 @@ export class EmptyStateComponent {
 
         try {
             const spec = await this.apiDefinitionFile.load(file);
+            this.onOpen.emit(spec);
+        } catch (e) {
+            console.log(e);
+            this.error = e.message;
+        }
+    }
+
+    public async loadSoaRepoFile(file?: Blob | FileSystemFileHandle): Promise<void> {
+        this.error = null;
+
+        try {
+            const spec = await this.apiDefinitionFile.loadSoarepo(file);
             this.onOpen.emit(spec);
         } catch (e) {
             console.log(e);
